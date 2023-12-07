@@ -339,7 +339,13 @@ function nextMicrotask() {
 }
 
 function parseHTMLDocument(html = "") {
-  return (new DOMParser).parseFromString(html, "text/html");
+  let parsedHTML = (new DOMParser).parseFromString(html, "text/html");
+  parsedHTML.querySelectorAll("style").forEach((element => {
+    var _a;
+    const cspNonce = ((_a = document.head.querySelector("meta[property=csp-nonce]")) === null || _a === void 0 ? void 0 : _a.content) || "";
+    element.nonce = cspNonce;
+  }));
+  return parsedHTML;
 }
 
 function unindent(strings, ...values) {
