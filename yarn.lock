@@ -23,10 +23,9 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@hotwired/turbo@^7.3.0":
-  version "7.3.0"
-  resolved "https://registry.yarnpkg.com/@hotwired/turbo/-/turbo-7.3.0.tgz#2226000fff1aabda9fd9587474565c9929dbf15d"
-  integrity sha512-Dcu+NaSvHLT7EjrDrkEmH4qET2ZJZ5IcCWmNXxNQTBwlnE5tBZfN6WxZ842n5cHV52DH/AKNirbPBtcEXDLW4g==
+"@hotwired/turbo@https://github.com/stampedai/turbo.git#turbo-7-fix-submit-polyfill":
+  version "7.3.1"
+  resolved "https://github.com/stampedai/turbo.git#974037a3920945d4e225783c0ec7818c91e5ec74"
 
 "@rails/actioncable@^7.0":
   version "7.0.1"

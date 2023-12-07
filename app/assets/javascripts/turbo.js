@@ -57,10 +57,13 @@ function clickCaptured(event) {
 (function() {
   if ("submitter" in Event.prototype) return;
   let prototype = window.Event.prototype;
-  if ("SubmitEvent" in window && /Apple Computer/.test(navigator.vendor)) {
-    prototype = window.SubmitEvent.prototype;
-  } else if ("SubmitEvent" in window) {
-    return;
+  if ("SubmitEvent" in window) {
+    const prototypeOfSubmitEvent = window.SubmitEvent.prototype;
+    if (/Apple Computer/.test(navigator.vendor) && !("submitter" in prototypeOfSubmitEvent)) {
+      prototype = prototypeOfSubmitEvent;
+    } else {
+      return;
+    }
   }
   addEventListener("click", clickCaptured, true);
   Object.defineProperty(prototype, "submitter", {
