@@ -339,13 +339,13 @@ function nextMicrotask() {
 }
 
 function parseHTMLDocument(html = "") {
-  let parsedHTML = (new DOMParser).parseFromString(html, "text/html");
-  parsedHTML.querySelectorAll("style").forEach((element => {
-    var _a;
-    const cspNonce = ((_a = document.head.querySelector("meta[property=csp-nonce]")) === null || _a === void 0 ? void 0 : _a.content) || "";
-    element.nonce = cspNonce;
-  }));
-  return parsedHTML;
+  return (new DOMParser).parseFromString(sanitizeHtml(html), "text/html");
+}
+
+function sanitizeHtml(html = "") {
+  var _a;
+  const cspNonce = (_a = document.head.querySelector("meta[property=csp-nonce]")) === null || _a === void 0 ? void 0 : _a.content;
+  return html.replace(/<style>/g, `<style nonce="${cspNonce}">`);
 }
 
 function unindent(strings, ...values) {
