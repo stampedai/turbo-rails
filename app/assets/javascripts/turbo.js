@@ -339,13 +339,7 @@ function nextMicrotask() {
 }
 
 function parseHTMLDocument(html = "") {
-  return (new DOMParser).parseFromString(sanitizeHtml(html), "text/html");
-}
-
-function sanitizeHtml(html = "") {
-  var _a;
-  const cspNonce = (_a = document.head.querySelector("meta[property=csp-nonce]")) === null || _a === void 0 ? void 0 : _a.content;
-  return html.replace(/<style>/g, `<style nonce="${cspNonce}">`);
+  return (new DOMParser).parseFromString(html, "text/html");
 }
 
 function unindent(strings, ...values) {
@@ -4069,14 +4063,14 @@ var turbo_es2017Esm = Object.freeze({
 let consumer;
 
 async function getConsumer() {
-  return consumer || setConsumer(createConsumer().then(setConsumer));
+  return consumer || setConsumer(createConsumer$1().then(setConsumer));
 }
 
 function setConsumer(newConsumer) {
   return consumer = newConsumer;
 }
 
-async function createConsumer() {
+async function createConsumer$1() {
   const {createConsumer: createConsumer} = await Promise.resolve().then((function() {
     return index;
   }));
@@ -4092,7 +4086,7 @@ var cable = Object.freeze({
   __proto__: null,
   getConsumer: getConsumer,
   setConsumer: setConsumer,
-  createConsumer: createConsumer,
+  createConsumer: createConsumer$1,
   subscribeTo: subscribeTo
 });
 
@@ -4318,6 +4312,8 @@ ConnectionMonitor.staleThreshold = 6;
 
 ConnectionMonitor.reconnectionBackoffRate = .15;
 
+var ConnectionMonitor$1 = ConnectionMonitor;
+
 var INTERNAL = {
   message_types: {
     welcome: "welcome",
@@ -4329,7 +4325,8 @@ var INTERNAL = {
   disconnect_reasons: {
     unauthorized: "unauthorized",
     invalid_request: "invalid_request",
-    server_restart: "server_restart"
+    server_restart: "server_restart",
+    remote: "remote"
   },
   default_mount_path: "/cable",
   protocols: [ "actioncable-v1-json", "actioncable-unsupported" ]
@@ -4346,7 +4343,7 @@ class Connection {
     this.open = this.open.bind(this);
     this.consumer = consumer;
     this.subscriptions = this.consumer.subscriptions;
-    this.monitor = new ConnectionMonitor(this);
+    this.monitor = new ConnectionMonitor$1(this);
     this.disconnected = true;
   }
   send(data) {
@@ -4362,11 +4359,12 @@ class Connection {
       logger.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
       return false;
     } else {
-      logger.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}`);
+      const socketProtocols = [ ...protocols, ...this.consumer.subprotocols || [] ];
+      logger.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${socketProtocols}`);
       if (this.webSocket) {
         this.uninstallEventHandlers();
       }
-      this.webSocket = new adapters.WebSocket(this.consumer.url, protocols);
+      this.webSocket = new adapters.WebSocket(this.consumer.url, socketProtocols);
       this.installEventHandlers();
       this.monitor.start();
       return true;
@@ -4378,7 +4376,7 @@ class Connection {
     if (!allowReconnect) {
       this.monitor.stop();
     }
-    if (this.isActive()) {
+    if (this.isOpen()) {
       return this.webSocket.close();
     }
   }
@@ -4407,6 +4405,9 @@ class Connection {
   }
   isActive() {
     return this.isState("open", "connecting");
+  }
+  triedToReconnect() {
+    return this.monitor.reconnectAttempts > 0;
   }
   isProtocolSupported() {
     return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
@@ -4447,6 +4448,9 @@ Connection.prototype.events = {
     const {identifier: identifier, message: message, reason: reason, reconnect: reconnect, type: type} = JSON.parse(event.data);
     switch (type) {
      case message_types.welcome:
+      if (this.triedToReconnect()) {
+        this.reconnectAttempted = true;
+      }
       this.monitor.recordConnect();
       return this.subscriptions.reload();
 
@@ -4461,7 +4465,16 @@ Connection.prototype.events = {
 
      case message_types.confirmation:
       this.subscriptions.confirmSubscription(identifier);
-      return this.subscriptions.notify(identifier, "connected");
+      if (this.reconnectAttempted) {
+        this.reconnectAttempted = false;
+        return this.subscriptions.notify(identifier, "connected", {
+          reconnected: true
+        });
+      } else {
+        return this.subscriptions.notify(identifier, "connected", {
+          reconnected: false
+        });
+      }
 
      case message_types.rejection:
       return this.subscriptions.reject(identifier);
@@ -4495,6 +4508,8 @@ Connection.prototype.events = {
     logger.log("WebSocket onerror event");
   }
 };
+
+var Connection$1 = Connection;
 
 const extend = function(object, properties) {
   if (properties != null) {
@@ -4565,10 +4580,12 @@ class SubscriptionGuarantor {
   }
 }
 
+var SubscriptionGuarantor$1 = SubscriptionGuarantor;
+
 class Subscriptions {
   constructor(consumer) {
     this.consumer = consumer;
-    this.guarantor = new SubscriptionGuarantor(this);
+    this.guarantor = new SubscriptionGuarantor$1(this);
     this.subscriptions = [];
   }
   create(channelName, mixin) {
@@ -4645,7 +4662,8 @@ class Consumer {
   constructor(url) {
     this._url = url;
     this.subscriptions = new Subscriptions(this);
-    this.connection = new Connection(this);
+    this.connection = new Connection$1(this);
+    this.subprotocols = [];
   }
   get url() {
     return createWebSocketURL(this._url);
@@ -4666,6 +4684,9 @@ class Consumer {
       return this.connection.open();
     }
   }
+  addSubProtocol(subprotocol) {
+    this.subprotocols = [ ...this.subprotocols, subprotocol ];
+  }
 }
 
 function createWebSocketURL(url) {
@@ -4683,7 +4704,7 @@ function createWebSocketURL(url) {
   }
 }
 
-function createConsumer$1(url = getConfig("url") || INTERNAL.default_mount_path) {
+function createConsumer(url = getConfig("url") || INTERNAL.default_mount_path) {
   return new Consumer(url);
 }
 
@@ -4696,17 +4717,17 @@ function getConfig(name) {
 
 var index = Object.freeze({
   __proto__: null,
-  Connection: Connection,
-  ConnectionMonitor: ConnectionMonitor,
+  Connection: Connection$1,
+  ConnectionMonitor: ConnectionMonitor$1,
   Consumer: Consumer,
   INTERNAL: INTERNAL,
   Subscription: Subscription,
   Subscriptions: Subscriptions,
-  SubscriptionGuarantor: SubscriptionGuarantor,
+  SubscriptionGuarantor: SubscriptionGuarantor$1,
   adapters: adapters,
   createWebSocketURL: createWebSocketURL,
   logger: logger,
-  createConsumer: createConsumer$1,
+  createConsumer: createConsumer,
   getConfig: getConfig
 });
 
