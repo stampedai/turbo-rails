@@ -25,7 +25,7 @@
 
 "@hotwired/turbo@https://github.com/stampedai/turbo.git#turbo-7-fix-submit-polyfill":
   version "7.3.1"
-  resolved "https://github.com/stampedai/turbo.git#974037a3920945d4e225783c0ec7818c91e5ec74"
+  resolved "https://github.com/stampedai/turbo.git#af30faddc95eb87544fd5740e4704f1c2cbc128c"
 
 "@rails/actioncable@^7.0":
   version "7.0.1"
