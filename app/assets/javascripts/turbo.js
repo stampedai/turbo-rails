@@ -341,17 +341,17 @@ function nextMicrotask() {
 function parseHTMLDocument(html = "") {
   const styleMap = {};
   html = html.replace(/<(\w+)([^>]*)style="([^"]*)"/g, ((match, tag, otherAttrs, style) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    styleMap[id] = style;
-    return `<${tag}${otherAttrs}id="${id}"`;
+    const uniqueKey = Math.random().toString(36).substr(2, 9);
+    styleMap[uniqueKey] = style;
+    return `<${tag}${otherAttrs} data-style-attribute="${uniqueKey}"`;
   }));
   const doc = (new DOMParser).parseFromString(html, "text/html");
-  Object.keys(styleMap).forEach((id => {
-    const element = doc.getElementById(id);
-    if (element) {
-      element.style.cssText = styleMap[id];
-      element.removeAttribute("id");
-    }
+  Object.keys(styleMap).forEach((uniqueKey => {
+    const elements = doc.querySelectorAll(`[data-style-attribute="${uniqueKey}"]`);
+    elements.forEach((element => {
+      element.style.cssText = styleMap[uniqueKey];
+      element.removeAttribute("data-style-attribute");
+    }));
   }));
   return doc;
 }
