@@ -26,7 +26,7 @@
 
 "@hotwired/turbo@https://github.com/stampedai/turbo.git#turbo-7-fix-submit-polyfill":
   version "7.3.1"
-  resolved "https://github.com/stampedai/turbo.git#aede2429eea19d948914d24c5f00ef2962176e2a"
+  resolved "https://github.com/stampedai/turbo.git#466978ebd1a942893396bdb85794aaf03dff4fc6"
 
 "@jridgewell/gen-mapping@^0.3.0":
   version "0.3.3"
