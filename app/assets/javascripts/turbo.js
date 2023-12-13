@@ -345,6 +345,11 @@ function parseHTMLDocument(html = "") {
     styleMap[uniqueKey] = style;
     return `<${tag}${otherAttrs} data-style-attribute="${uniqueKey}"`;
   }));
+  html = html.replace(/<style([^>]*)>/g, ((match, otherAttrs) => {
+    const nonce = getMetaContent("csp-nonce");
+    otherAttrs = otherAttrs.replace(/nonce=""/g, "");
+    return nonce ? `<style${otherAttrs} nonce="${nonce}">` : match;
+  }));
   const doc = (new DOMParser).parseFromString(html, "text/html");
   Object.keys(styleMap).forEach((uniqueKey => {
     const elements = doc.querySelectorAll(`[data-style-attribute="${uniqueKey}"]`);
